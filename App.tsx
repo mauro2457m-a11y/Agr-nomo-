@@ -40,6 +40,12 @@ const SparklesIcon = () => (
   </svg>
 );
 
+const ScienceIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-green-600/70 group-hover:text-green-700 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5v5.25c0 .621-.504 1.125-1.125 1.125H6.125c-.621 0-1.125-.504-1.125-1.125V14.5m13.25 0h-1.5M4.75 14.5h-1.5a1.125 1.125 0 010-2.25h1.5a1.125 1.125 0 010 2.25z" />
+    </svg>
+);
+
 
 // Helper Service
 const getAdvancedTips = async (
@@ -81,13 +87,12 @@ Formate a resposta em Markdown, usando títulos (com ##), listas com marcadores 
 // Child Components defined outside main component
 const CropCard: React.FC<{ crop: Crop; onSelect: (crop: Crop) => void }> = ({ crop, onSelect }) => (
     <div
-        className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+        className="group cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-stone-50 p-4 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-green-600 hover:-translate-y-1"
         onClick={() => onSelect(crop)}
     >
-        <img src={crop.imageUrl} alt={crop.name} className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-110" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 p-4">
-            <h3 className="text-2xl font-bold text-white tracking-wide">{crop.name}</h3>
+        <div className="flex h-52 w-full flex-col items-center justify-center">
+            <ScienceIcon />
+            <h3 className="text-center text-2xl font-bold text-gray-700 tracking-wide">{crop.name}</h3>
         </div>
     </div>
 );
@@ -205,26 +210,48 @@ const CropDetails: React.FC<{ crop: Crop; onBack: () => void }> = ({ crop, onBac
     </div>
 );
 
-const CropSelector: React.FC<{ onSelectCrop: (crop: Crop) => void }> = ({ onSelectCrop }) => (
-    <div className="text-center animate-fade-in">
-        <header className="mb-12">
-            <div className="flex justify-center items-center gap-4 mb-4">
-                <LeafIcon />
-                <h1 className="text-4xl md:text-5xl font-extrabold text-green-800 tracking-tight">
-                    Guia do Agrônomo Moderno
-                </h1>
+const CropSelector: React.FC<{ onSelectCrop: (crop: Crop) => void }> = ({ onSelectCrop }) => {
+    const [showAll, setShowAll] = useState(false);
+
+    const featuredCropIds = ['feijao', 'batata', 'quiabo', 'couve', 'maracuja'];
+    const orderedFeaturedCrops = featuredCropIds
+        .map(id => CROP_DATA.find(c => c.id === id))
+        .filter((c): c is Crop => c !== undefined);
+
+    const cropsToDisplay = showAll ? CROP_DATA : orderedFeaturedCrops;
+
+    return (
+        <div className="text-center animate-fade-in">
+            <header className="mb-12">
+                <div className="flex justify-center items-center gap-4 mb-4">
+                    <LeafIcon />
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-green-800 tracking-tight">
+                        Guia do Agrônomo Moderno
+                    </h1>
+                </div>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                    {showAll
+                        ? 'Explore nosso guia completo para todas as culturas disponíveis.'
+                        : 'Selecione uma cultura em destaque para ver o guia de manejo, ou explore todas as opções.'
+                    }
+                </p>
+            </header>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {cropsToDisplay.map(crop => (
+                    <CropCard key={crop.id} crop={crop} onSelect={onSelectCrop} />
+                ))}
             </div>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Selecione uma cultura abaixo para ver um guia detalhado sobre plantio, pragas comuns e as melhores estratégias de manejo.
-            </p>
-        </header>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {CROP_DATA.map(crop => (
-                <CropCard key={crop.id} crop={crop} onSelect={onSelectCrop} />
-            ))}
+            <div className="mt-16 text-center">
+                <button
+                    onClick={() => setShowAll(prev => !prev)}
+                    className="px-8 py-3 bg-green-700 text-white font-semibold rounded-lg shadow-md hover:bg-green-800 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                    {showAll ? 'Mostrar Apenas Destaques' : 'Ver Todas as Culturas'}
+                </button>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 
 export default function App() {
