@@ -118,6 +118,18 @@ const SettingsIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+const LockIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+    </svg>
+);
+
+const KeyIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11.536 17 9 19l-3-3m0 0l3-3 .536-2.536a6 6 0 019.464-3.464z" />
+    </svg>
+);
+
 // --- Child Components ---
 
 const SettingsModal: React.FC<{ 
@@ -125,7 +137,9 @@ const SettingsModal: React.FC<{
     onClose: () => void;
     userName: string;
     setUserName: (name: string) => void;
-}> = ({ isOpen, onClose, userName, setUserName }) => {
+    apiKey: string;
+    setApiKey: (key: string) => void;
+}> = ({ isOpen, onClose, userName, setUserName, apiKey, setApiKey }) => {
     if (!isOpen) return null;
 
     return (
@@ -142,33 +156,33 @@ const SettingsModal: React.FC<{
                 </div>
                 
                 <div className="p-6 space-y-6">
-                    {/* Fake API Key Section to satisfy user request visually but maintain security */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            0. Configuração da Chave de API
+                    {/* API Key Config */}
+                    <div className="bg-[#2b2b3d] p-4 rounded-lg border border-gray-600">
+                        <label className="block text-sm font-medium text-gray-300 mb-2 flex justify-between items-center">
+                            <span className="flex items-center gap-2">
+                                <KeyIcon className="w-4 h-4 text-indigo-400" />
+                                Chave de API do Google
+                            </span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 text-xs underline">
+                                Obter chave
+                            </a>
                         </label>
-                        <p className="text-xs text-gray-400 mb-2">
-                            Sua Chave de API é gerenciada automaticamente pelo ambiente seguro.
+                        <input 
+                            type="password" 
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder="Cole sua API Key aqui (AIza...)"
+                            className="w-full bg-[#1e1e2f] border border-gray-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono text-sm mb-2"
+                        />
+                        <p className="text-xs text-gray-400">
+                            A chave é salva apenas no seu navegador. Deixe em branco para usar a configuração padrão do sistema (se disponível).
                         </p>
-                        <div className="relative">
-                            <input 
-                                type="text" 
-                                value="••••••••••••••••••••••••••••••••" 
-                                disabled
-                                className="w-full bg-[#2b2b3d] border border-gray-600 rounded-lg py-2 px-4 text-green-400 font-mono text-sm opacity-70 cursor-not-allowed"
-                            />
-                            <div className="absolute right-3 top-2.5 text-green-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                        </div>
                     </div>
 
                     {/* User Name Section */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            1. Perfil do Produtor
+                            Perfil do Produtor
                         </label>
                         <p className="text-xs text-gray-400 mb-2">
                             Como gostaria que a IA chamasse você?
@@ -188,7 +202,7 @@ const SettingsModal: React.FC<{
                         onClick={onClose}
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
                     >
-                        Concluído
+                        Salvar e Fechar
                     </button>
                 </div>
             </div>
@@ -333,7 +347,7 @@ interface ChatMessage {
     text: string;
 }
 
-const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, userName }) => {
+const VoiceAssistant: React.FC<{ crop: Crop; userName: string; apiKey: string }> = ({ crop, userName, apiKey }) => {
     const [isActive, setIsActive] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -394,20 +408,25 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
         setIsActive(false);
         setIsConnecting(false);
         nextStartTimeRef.current = 0;
-        // Don't close chat automatically if there was an error so user can see it,
-        // but if stopped manually, maybe? Let's keep it open if it was open.
     };
 
     const startSession = async () => {
         setIsConnecting(true);
         setError(null);
-        setIsChatOpen(true); // Open chat window immediately so user sees connection status
+        setIsChatOpen(true);
+
+        const effectiveKey = apiKey || process.env.API_KEY;
+
+        if (!effectiveKey) {
+            setError("Chave de API não configurada. Por favor, adicione sua chave nas configurações (ícone de engrenagem).");
+            setIsConnecting(false);
+            return;
+        }
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey: effectiveKey });
             
             // 1. Setup Audio Input
-            // Relax constraints to avoid OverconstrainedError
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: true,
@@ -417,15 +436,25 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
             });
             mediaStreamRef.current = stream;
 
-            // We explicitly create a 16kHz context to resample the input if needed
-            const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+            // Use window.AudioContext or webkitAudioContext, but try to handle sampleRate gracefully
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
             
+            // Note: Some browsers/hardware don't support arbitrary sample rates. 
+            // We request 16000 for compatibility with Gemini, but if it fails, we might need a fallback or trust the browser.
+            let inputAudioContext;
+            try {
+                inputAudioContext = new AudioContextClass({ sampleRate: 16000 });
+            } catch (e) {
+                console.warn("Could not create 16kHz context, falling back to default.", e);
+                inputAudioContext = new AudioContextClass(); // Fallback to default rate
+            }
+
             if (inputAudioContext.state === 'suspended') {
                 await inputAudioContext.resume();
             }
             inputAudioContextRef.current = inputAudioContext;
             
-            const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            const outputAudioContext = new AudioContextClass({ sampleRate: 24000 });
             outputAudioContextRef.current = outputAudioContext;
 
             const outputNode = outputAudioContext.createGain();
@@ -453,7 +482,6 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                         setIsActive(true);
                         setMessages([{role: 'model', text: `Olá ${userName ? userName : ''}! Sou seu assistente para a cultura do ${crop.name}. Como posso ajudar?`}]);
 
-                        // Start piping microphone to API
                         const source = inputAudioContext.createMediaStreamSource(stream);
                         const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
                         
@@ -477,7 +505,6 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                         scriptProcessor.connect(inputAudioContext.destination);
                     },
                     onmessage: (message: LiveServerMessage) => {
-                        // Handle Transcriptions
                         if (message.serverContent?.outputTranscription) {
                             setCurrentOutput(prev => prev + message.serverContent?.outputTranscription?.text);
                         }
@@ -485,7 +512,6 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                             setCurrentInput(prev => prev + message.serverContent?.inputTranscription?.text);
                         }
                         
-                        // Handle Turn Completion (Commit text to history)
                         if (message.serverContent?.turnComplete) {
                              setCurrentInput(prev => {
                                 if (prev.trim()) {
@@ -504,7 +530,6 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                              });
                         }
 
-                        // Handle Audio
                         const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
                         
                         if (base64Audio) {
@@ -520,7 +545,6 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                                 sourcesRef.current.delete(source);
                             });
 
-                            // Simple scheduling
                             const currentTime = outputAudioContext.currentTime;
                             if (nextStartTimeRef.current < currentTime) {
                                 nextStartTimeRef.current = currentTime;
@@ -535,7 +559,6 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                              sourcesRef.current.forEach(source => source.stop());
                              sourcesRef.current.clear();
                              nextStartTimeRef.current = 0;
-                             // Also clear current output if interrupted
                              setCurrentOutput(''); 
                         }
                     },
@@ -545,7 +568,7 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
                     },
                     onerror: (e) => {
                         console.error("Session error", e);
-                        setError("Erro na conexão com a IA. Tente novamente.");
+                        setError("Erro na conexão com a IA. Verifique sua Chave de API.");
                         stopSession();
                     }
                 }
@@ -558,9 +581,9 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                  setError("Acesso ao microfone negado. Por favor, permita o acesso no navegador.");
             } else if (err.name === 'OverconstrainedError') {
-                 setError("Dispositivo de áudio não suporta a configuração solicitada.");
+                 setError("Erro de hardware de áudio. Tente usar outro dispositivo.");
             } else {
-                 setError(`Erro ao iniciar: ${err.message || 'Verifique sua conexão'}`);
+                 setError(`Erro ao conectar: ${err.message || 'Falha desconhecida'}.`);
             }
             setIsConnecting(false);
         }
@@ -690,7 +713,7 @@ const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, user
 };
 
 
-const CropDetails: React.FC<{ crop: Crop; onBack: () => void; userName: string }> = ({ crop, onBack, userName }) => {
+const CropDetails: React.FC<{ crop: Crop; onBack: () => void; userName: string; apiKey: string }> = ({ crop, onBack, userName, apiKey }) => {
     const [showOnlyOrganicPests, setShowOnlyOrganicPests] = useState(false);
     const [showOnlyOrganicDiseases, setShowOnlyOrganicDiseases] = useState(false);
     const [showOnlyOrganicWeeds, setShowOnlyOrganicWeeds] = useState(false);
@@ -710,7 +733,7 @@ const CropDetails: React.FC<{ crop: Crop; onBack: () => void; userName: string }
     return (
         <>
             {/* Voice Assistant - AI Interface */}
-            <VoiceAssistant crop={crop} userName={userName} />
+            <VoiceAssistant crop={crop} userName={userName} apiKey={apiKey} />
             
             <div className="animate-fade-in relative">
                 <button
@@ -890,6 +913,11 @@ export default function App() {
     const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [userName, setUserName] = useState('');
+    const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+
+    useEffect(() => {
+        localStorage.setItem('gemini_api_key', apiKey);
+    }, [apiKey]);
 
     useEffect(() => {
         const style = document.createElement('style');
@@ -942,11 +970,13 @@ export default function App() {
                 onClose={() => setIsSettingsOpen(false)}
                 userName={userName}
                 setUserName={setUserName}
+                apiKey={apiKey}
+                setApiKey={setApiKey}
             />
 
             <main className="container mx-auto px-4 py-8 md:py-12">
                 {selectedCrop ? (
-                    <CropDetails crop={selectedCrop} onBack={handleBack} userName={userName} />
+                    <CropDetails crop={selectedCrop} onBack={handleBack} userName={userName} apiKey={apiKey} />
                 ) : (
                     <CropSelector onSelectCrop={handleSelectCrop} />
                 )}
