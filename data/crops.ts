@@ -166,7 +166,7 @@ export const CROP_DATA: Crop[] = [
         description: 'Pequeno besouro que perfura o grão de café (fruto), onde deposita seus ovos. As larvas se alimentam do interior do grão, destruindo-o.',
         controlMethods: {
           chemical: ['Ciantraniliprole (via solo ou pulverização)', 'Clorantraniliprole'],
-          organic: ['Controle biológico com o fungo Beauveria bassiana', 'Manejo da colheita (não deixar frutos na planta/chão).'],
+          organic: ['Controle biológico com o fungo Beauveria bassiana', 'Manejo de colheita (não deixar frutos na planta/chão).'],
         },
         applicationGuide: 'Monitorar a infestação com armadilhas. A aplicação de Beauveria bassiana deve ser feita com alta umidade relativa do ar. Realizar colheita bem feita é a principal forma de controle.',
       },
@@ -258,7 +258,7 @@ export const CROP_DATA: Crop[] = [
     plantingSeason: 'Sul/Sudeste: Safra das águas (Ago-Nov), Safra das secas (Jan-Mar), Safra de inverno (Abr-Jul).',
     fertilization: {
         recommended_fertilizers: 'Muito exigente em Potássio (K) para a formação de tubérculos. Formulações como 04-14-08 ou 05-20-10 são usadas no plantio.',
-        dosage_and_application: 'Toda a adubação é feita no plantio, no sulco, na base de 800-1200 kg/ha. A amontoa (chegamento de terra na base da planta) ajuda a proteger os tubérculos e a otimizar a adubação.'
+        dosage_and_application: 'Toda a adubação de P e K é feita no plantio, na base de 800-1200 kg/ha. A amontoa (chegamento de terra na base da planta) ajuda a proteger os tubérculos e a otimizar a adubação.'
     },
     pests: [
       {
@@ -348,6 +348,25 @@ export const CROP_DATA: Crop[] = [
             organic: ['Rotação de culturas', 'Eliminação de restos de plantas infectadas.'],
           },
           applicationGuide: 'Aplicar preventivamente em épocas de chuva e calor. Garantir uma boa nutrição da planta para aumentar sua resistência.'
+        }
+      ],
+      weeds: [
+        {
+            name: 'Capim-alho Fino (Nothoscordum gracile / Cyperus spp.)',
+            description: 'Planta daninha de difícil controle devido aos seus bulbos subterrâneos. Compete agressivamente por nutrientes e água.',
+            controlMethods: {
+                chemical: [
+                    'Controle em pós-emergência no quiabo é MUITO difícil devido à falta de herbicidas seletivos registrados.',
+                    'Dessecação pré-plantio com Glifosato é a medida mais eficaz para reduzir a população antes da semeadura.',
+                    'Se for uma gramínea verdadeira (Poaceae), pode-se usar Cletodim (verificar registro local), mas para Capim-alho verdadeiro (Liliaceae/Amaryllidaceae) ou Tiririca (Cyperaceae), herbicidas graminicidas não funcionam.'
+                ],
+                organic: [
+                    'Capina manual ou mecânica cuidadosa nas entrelinhas.',
+                    'Uso de cobertura morta (mulching) espessa para inibir a emergência dos bulbos.',
+                    'Solarização do solo antes do plantio.'
+                ]
+            },
+            applicationGuide: 'O foco deve ser na limpeza da área ANTES do plantio. Durante o ciclo, a capina manual ou o cultivo mecânico nas entrelinhas são as opções mais seguras para não intoxicar o quiabeiro.'
         }
       ]
   },

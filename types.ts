@@ -18,6 +18,16 @@ export interface Disease {
   applicationGuide: string;
 }
 
+export interface Weed {
+  name: string;
+  description: string;
+  controlMethods: {
+    chemical: string[];
+    organic: string[];
+  };
+  applicationGuide: string;
+}
+
 export interface FertilizationInfo {
   recommended_fertilizers: string;
   dosage_and_application: string;
@@ -31,4 +41,5 @@ export interface Crop {
   fertilization: FertilizationInfo;
   pests: Pest[];
   diseases: Disease[];
+  weeds?: Weed[];
 }
