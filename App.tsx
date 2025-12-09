@@ -311,23 +311,35 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
         setIsActive(false);
         setIsConnecting(false);
         nextStartTimeRef.current = 0;
-        setIsChatOpen(false);
+        // Don't close chat automatically if there was an error so user can see it,
+        // but if stopped manually, maybe? Let's keep it open if it was open.
     };
 
     const startSession = async () => {
         setIsConnecting(true);
         setError(null);
-        setIsChatOpen(true); // Open chat window on start
+        setIsChatOpen(true); // Open chat window immediately so user sees connection status
 
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             // 1. Setup Audio Input
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
+            // Relax constraints to avoid OverconstrainedError
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                } 
+            });
             mediaStreamRef.current = stream;
 
+            // We explicitly create a 16kHz context to resample the input if needed
             const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-            await inputAudioContext.resume(); // Ensure context is running
+            
+            if (inputAudioContext.state === 'suspended') {
+                await inputAudioContext.resume();
+            }
             inputAudioContextRef.current = inputAudioContext;
             
             const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -391,24 +403,6 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
                         
                         // Handle Turn Completion (Commit text to history)
                         if (message.serverContent?.turnComplete) {
-                            setMessages(prev => {
-                                const newMessages = [...prev];
-                                // We might have pending input or output to commit if not empty
-                                // Note: Live API streaming might send turnComplete for both ends, logic needs to be additive.
-                                // Simplification: We rely on currentInput/Output accumulating and only push when complete.
-                                // However, React state updates in callback are tricky.
-                                // We'll just rely on the visual "Current" state and clear it effectively.
-                                // Better approach for React:
-                                return newMessages;
-                            });
-                             
-                             // Since we can't easily access the latest state inside this callback without a ref or functional update messiness
-                             // for two separate state variables, we will use a workaround:
-                             // Actually, let's just push to messages when we detect a "final" event or just display the streams.
-                             // For simplicity in this demo, we will reset the streams and push to messages in a `useEffect` or just let the streams grow?
-                             // No, they need to be reset.
-                             
-                             // Let's do a simple reset if we have content
                              setCurrentInput(prev => {
                                 if (prev.trim()) {
                                     setMessages(m => [...m, {role: 'user', text: prev.trim()}]);
@@ -467,7 +461,7 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
                     },
                     onerror: (e) => {
                         console.error("Session error", e);
-                        setError("Erro na conexão. Tente novamente.");
+                        setError("Erro na conexão com a IA. Tente novamente.");
                         stopSession();
                     }
                 }
@@ -475,9 +469,15 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
 
             sessionRef.current = sessionPromise;
 
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError("Permissão de microfone negada ou erro ao conectar.");
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                 setError("Acesso ao microfone negado. Por favor, permita o acesso no navegador.");
+            } else if (err.name === 'OverconstrainedError') {
+                 setError("Dispositivo de áudio não suporta a configuração solicitada.");
+            } else {
+                 setError(`Erro ao iniciar: ${err.message || 'Verifique sua conexão'}`);
+            }
             setIsConnecting(false);
         }
     };
@@ -501,7 +501,7 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
                             <SparklesIcon className="w-5 h-5" />
                             <h3 className="font-bold">IA Agrônoma</h3>
                         </div>
-                        <button onClick={stopSession} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+                        <button onClick={() => { stopSession(); setIsChatOpen(false); }} className="hover:bg-white/20 p-1 rounded-full transition-colors">
                             <CloseIcon />
                         </button>
                     </div>
@@ -537,30 +537,42 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
                             </div>
                         )}
                         
-                        {messages.length === 0 && !currentInput && !currentOutput && (
+                        {messages.length === 0 && !currentInput && !currentOutput && !error && (
                             <div className="text-center text-gray-400 text-sm mt-10">
-                                <p>Faça uma pergunta sobre o {crop.name}...</p>
+                                <p>Conectando ao assistente...</p>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="text-center p-4">
+                                <p className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-100">{error}</p>
                             </div>
                         )}
                     </div>
 
                     {/* Footer Status */}
                     <div className="p-3 bg-white border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                         <span className="flex items-center gap-1">
-                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                             Ouvindo...
-                         </span>
+                         {isActive ? (
+                             <span className="flex items-center gap-1 text-green-600 font-medium">
+                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                 Ouvindo... (Fale agora)
+                             </span>
+                         ) : isConnecting ? (
+                            <span className="text-indigo-600">Conectando...</span>
+                         ) : (
+                            <span>Desconectado</span>
+                         )}
                          <span>Gemini Live</span>
                     </div>
                 </div>
             )}
-
-            {error && (
-                <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg shadow-lg mb-2 text-sm">
+            
+            {!isChatOpen && error && (
+                 <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg shadow-lg mb-2 text-sm max-w-xs">
                     {error}
                 </div>
             )}
-            
+
             <button
                 onClick={toggleSession}
                 className={`flex items-center justify-center gap-3 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 ${
