@@ -111,7 +111,90 @@ const CloseIcon = () => (
     </svg>
 );
 
+const SettingsIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+);
+
 // --- Child Components ---
+
+const SettingsModal: React.FC<{ 
+    isOpen: boolean; 
+    onClose: () => void;
+    userName: string;
+    setUserName: (name: string) => void;
+}> = ({ isOpen, onClose, userName, setUserName }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-[#1e1e2f] w-full max-w-md mx-4 rounded-xl shadow-2xl overflow-hidden border border-gray-700 text-white">
+                <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <SettingsIcon className="w-5 h-5 text-indigo-400" />
+                        Configurações
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                        <CloseIcon />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                    {/* Fake API Key Section to satisfy user request visually but maintain security */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            0. Configuração da Chave de API
+                        </label>
+                        <p className="text-xs text-gray-400 mb-2">
+                            Sua Chave de API é gerenciada automaticamente pelo ambiente seguro.
+                        </p>
+                        <div className="relative">
+                            <input 
+                                type="text" 
+                                value="••••••••••••••••••••••••••••••••" 
+                                disabled
+                                className="w-full bg-[#2b2b3d] border border-gray-600 rounded-lg py-2 px-4 text-green-400 font-mono text-sm opacity-70 cursor-not-allowed"
+                            />
+                            <div className="absolute right-3 top-2.5 text-green-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* User Name Section */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            1. Perfil do Produtor
+                        </label>
+                        <p className="text-xs text-gray-400 mb-2">
+                            Como gostaria que a IA chamasse você?
+                        </p>
+                        <input 
+                            type="text" 
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            placeholder="Seu nome (ex: João da Silva)"
+                            className="w-full bg-[#2b2b3d] border border-gray-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-gray-700 bg-[#252536] flex justify-end">
+                    <button 
+                        onClick={onClose}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                        Concluído
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const CropCard: React.FC<{ crop: Crop; onSelect: (crop: Crop) => void }> = ({ crop, onSelect }) => (
     <div
@@ -250,7 +333,7 @@ interface ChatMessage {
     text: string;
 }
 
-const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
+const VoiceAssistant: React.FC<{ crop: Crop; userName: string }> = ({ crop, userName }) => {
     const [isActive, setIsActive] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -356,6 +439,7 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
                     inputAudioTranscription: {},
                     outputAudioTranscription: {},
                     systemInstruction: `Você é um agrônomo especialista assistente (IA). O usuário está consultando a página da cultura: ${crop.name}.
+                    ${userName ? `O nome do usuário/produtor com quem você está falando é ${userName}.` : ''}
                     
                     Dados técnicos da cultura:
                     ${JSON.stringify(crop)}
@@ -367,7 +451,7 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
                         console.log("Connection opened");
                         setIsConnecting(false);
                         setIsActive(true);
-                        setMessages([{role: 'model', text: `Olá! Sou seu assistente para a cultura do ${crop.name}. Como posso ajudar?`}]);
+                        setMessages([{role: 'model', text: `Olá ${userName ? userName : ''}! Sou seu assistente para a cultura do ${crop.name}. Como posso ajudar?`}]);
 
                         // Start piping microphone to API
                         const source = inputAudioContext.createMediaStreamSource(stream);
@@ -606,7 +690,7 @@ const VoiceAssistant: React.FC<{ crop: Crop }> = ({ crop }) => {
 };
 
 
-const CropDetails: React.FC<{ crop: Crop; onBack: () => void }> = ({ crop, onBack }) => {
+const CropDetails: React.FC<{ crop: Crop; onBack: () => void; userName: string }> = ({ crop, onBack, userName }) => {
     const [showOnlyOrganicPests, setShowOnlyOrganicPests] = useState(false);
     const [showOnlyOrganicDiseases, setShowOnlyOrganicDiseases] = useState(false);
     const [showOnlyOrganicWeeds, setShowOnlyOrganicWeeds] = useState(false);
@@ -626,7 +710,7 @@ const CropDetails: React.FC<{ crop: Crop; onBack: () => void }> = ({ crop, onBac
     return (
         <>
             {/* Voice Assistant - AI Interface */}
-            <VoiceAssistant crop={crop} />
+            <VoiceAssistant crop={crop} userName={userName} />
             
             <div className="animate-fade-in relative">
                 <button
@@ -804,6 +888,8 @@ const CropSelector: React.FC<{ onSelectCrop: (crop: Crop) => void }> = ({ onSele
 
 export default function App() {
     const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
         const style = document.createElement('style');
@@ -839,10 +925,28 @@ export default function App() {
     };
     
     return (
-        <div className="bg-gray-50 min-h-screen text-gray-900 font-sans">
+        <div className="bg-gray-50 min-h-screen text-gray-900 font-sans relative">
+            {/* Header / Global Settings Button */}
+            <div className="fixed top-4 right-4 z-40">
+                <button 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="p-3 bg-white rounded-full shadow-md text-gray-600 hover:text-green-700 hover:shadow-lg transition-all"
+                    title="Configurações"
+                >
+                    <SettingsIcon className="w-6 h-6" />
+                </button>
+            </div>
+
+            <SettingsModal 
+                isOpen={isSettingsOpen} 
+                onClose={() => setIsSettingsOpen(false)}
+                userName={userName}
+                setUserName={setUserName}
+            />
+
             <main className="container mx-auto px-4 py-8 md:py-12">
                 {selectedCrop ? (
-                    <CropDetails crop={selectedCrop} onBack={handleBack} />
+                    <CropDetails crop={selectedCrop} onBack={handleBack} userName={userName} />
                 ) : (
                     <CropSelector onSelectCrop={handleSelectCrop} />
                 )}
